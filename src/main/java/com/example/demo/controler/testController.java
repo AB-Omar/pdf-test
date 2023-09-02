@@ -1,4 +1,6 @@
 package com.example.demo.controler;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,8 @@ import java.nio.file.FileSystems;
 
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import org.xhtmlrenderer.layout.SharedContext;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping (value = "")
@@ -62,4 +66,29 @@ public class testController {
                     .body(null);
         }
     }
+    @GetMapping(value="pdf")
+    public ResponseEntity<byte[]> createPdf() throws IOException {
+
+        //Creating PDF document object 
+      PDDocument document = new PDDocument();  
+      for (int i=0; i<10; i++) {
+        //Creating a blank page 
+        PDPage blankPage = new PDPage();
+
+        //Adding the blank page to the document
+        document.addPage( blankPage );
+     } 
+       
+      //Saving the document
+      document.save("temp/doc1.pdf");
+         
+      System.out.println("PDF created");  
+    
+      //Closing the document  
+      document.close();
+         return ResponseEntity
+                    .created(null)
+                    .body(null);
+
+    } 
 }
