@@ -3,11 +3,11 @@ package com.example.demo.controler;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,14 +21,10 @@ import java.nio.file.FileSystems;
 
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import org.xhtmlrenderer.layout.SharedContext;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping(value = "")
 public class testController {
-
-    @Autowired
-    private ResourceLoader resourceLoader;
 
     @GetMapping(value = "/test", produces = MediaType.APPLICATION_PDF_VALUE)
     @ResponseBody
@@ -86,7 +82,6 @@ public class testController {
 
             // Setting the position for the line
             contentStream.newLineAtOffset(25, 500);
-            contentStream.setStrokingColor(233, 33, 444);
 
             String text = "This is the sample document and we are adding content to it. " + i;
 
@@ -111,5 +106,20 @@ public class testController {
                 .created(null)
                 .body(null);
 
+    }
+    
+    @GetMapping (value = "loadpdf")
+    public ResponseEntity<byte[]> loadPdf() throws IOException {
+
+        File oldFile = new File("temp/loadpdf.pdf");
+        PDDocument document = PDDocument.load(oldFile);
+        PDPage page = new PDPage(PDRectangle.A4);
+        page.setRotation(90);
+        document.addPage(page);
+        document.save("temp/newPdf.pdf");
+        System.out.println("testController.loadPdf()");
+        return ResponseEntity
+                .created(null)
+                .body(null);
     }
 }
