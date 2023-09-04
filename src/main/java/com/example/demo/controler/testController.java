@@ -55,7 +55,7 @@ public class testController {
             byte[] pdfBytes = pdfOutputStream.toByteArray();
 
             // Save the byte[] to a file in temp directory
-            try (FileOutputStream fos = new FileOutputStream("temp/docccc.pdf")) {
+            try (FileOutputStream fos = new FileOutputStream("temp/htmltopdf.pdf")) {
                 fos.write(pdfBytes);
             }
             return ResponseEntity
@@ -102,7 +102,7 @@ public class testController {
         }
 
         // Saving the document
-        document.save("temp/doc1.pdf");
+        document.save("temp/createpdf.pdf");
 
         System.out.println("PDF created");
 
@@ -133,8 +133,8 @@ public class testController {
     @GetMapping(value = "mergepdf")
     public ResponseEntity<byte[]> mergepdf() throws IOException {
 
-        File oldFile = new File("temp/loadpdf.pdf");
-        File oldFile1 = new File("temp/output.pdf");
+        File oldFile = new File("temp/createpdf.pdf");
+        File oldFile1 = new File("temp/htmltopdf.pdf");
 
         PDDocument document = PDDocument.load(oldFile);
         PDDocument document1 = PDDocument.load(oldFile1);
@@ -142,7 +142,7 @@ public class testController {
         for (int i = 0; i < document1.getNumberOfPages(); i++) {
             document.addPage(document1.getPage(i));
         }
-        document.save("temp/newPdf.pdf");
+        document.save("temp/merged.pdf");
         System.out.println("testController.loadPdf()");
         return ResponseEntity
                 .created(null)
@@ -151,81 +151,77 @@ public class testController {
 
     @GetMapping(value = "addimage")
     public ResponseEntity<byte[]> addImage(
-        @RequestParam("file") MultipartFile file,
-        @RequestParam("percentage") Integer percentage
-    ) throws IOException {
-        
-        final String headerText = "This is the header";
-        final String footerText = "This is the footer";
-        File oldFile = new File("temp/loadpdf.pdf");
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("percentage") Integer percentage) throws IOException {
+
+        File oldFile = new File("temp/merged.pdf");
         PDDocument document = PDDocument.load(oldFile);
-    
+
         int lastPageIndex = document.getNumberOfPages() - 1;
         PDPage lastPage = document.getPage(lastPageIndex);
-    
+
         PDImageXObject image = PDImageXObject.createFromByteArray(document, file.getBytes(), "added-image");
-    
+
         float scale = (float) percentage / 100;
         float newWidth = image.getWidth() * scale;
         float newHeight = image.getHeight() * scale;
-    
+
         float pageHeight = lastPage.getMediaBox().getHeight();
         float pageWidth = lastPage.getMediaBox().getWidth();
-        
-        float yPosition = pageHeight - newHeight - 50; // start 50 units from the top
-        float xPosition = 50; // start 50 units from the left
-    
-        // Loop to add the image three times
-        for (int i = 0; i < 3; i++) {
-            // Check if the image fits vertically in the remaining space
-            if (yPosition - newHeight < 0) {
-                // Add a new page and reset positions
-                lastPage = new PDPage();
-                document.addPage(lastPage);
-                yPosition = pageHeight - newHeight - 50;
-                xPosition = 50;
-            }
-    
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, lastPage, PDPageContentStream.AppendMode.APPEND, true, true)) {
-                contentStream.drawImage(image, xPosition, yPosition, newWidth, newHeight);
-            }
-    
-            yPosition -= (newHeight + 50);  // Move down for the next image, leaving 50 units as a gap
+
+        float yPosition = 30; // start 50 units from the top
+        float xPosition = 70; // start 10 units from the left
+
+        // Check if the image fits vertically in the remaining space
+        if (yPosition - newHeight < 0) {
+            // Add a new page and reset positions
+            lastPage = new PDPage();
+            document.addPage(lastPage);
+            yPosition = pageHeight - newHeight - 10;
+            xPosition = 50;
         }
-    
+
+        try (PDPageContentStream contentStream = new PDPageContentStream(document, lastPage,
+                PDPageContentStream.AppendMode.APPEND, true, true)) {
+            contentStream.drawImage(image, xPosition, yPosition, newWidth, newHeight);
+        }
+
+        yPosition -= (newHeight + 50); // Move down for the next image, leaving 50 units as a gap
+
         addHeadersAndFooters(document);
-        document.save("temp/newPdf.pdf");
-    
+        document.save("temp/mergedPDFwithImage.pdf");
+
         return ResponseEntity
                 .created(null)
                 .body(null);
     }
-    
+
     public void addHeadersAndFooters(PDDocument document) throws IOException {
         final String headerText = "This is the header";
         final String footerText = "This is the footer";
-    
+
         for (int i = 0; i < document.getNumberOfPages(); ++i) {
             PDPage page = document.getPage(i);
             float pageWidth = page.getMediaBox().getWidth();
             float pageHeight = page.getMediaBox().getHeight();
-    
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page,
+                    PDPageContentStream.AppendMode.APPEND, true, true)) {
                 // Header
                 contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
                 contentStream.beginText();
-                contentStream.newLineAtOffset(50, pageHeight - 50);  // position 50 units from top and left
+                contentStream.newLineAtOffset(50, pageHeight - 50); // position 50 units from top and left
                 contentStream.showText(headerText);
                 contentStream.endText();
-    
+
                 // Footer
                 contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
                 contentStream.beginText();
-                contentStream.newLineAtOffset(50, 50);  // position 50 units from bottom and left
+                contentStream.newLineAtOffset(50, 50); // position 50 units from bottom and left
                 contentStream.showText(footerText);
                 contentStream.endText();
             }
         }
     }
-    
+
 }
